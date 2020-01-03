@@ -1,0 +1,2 @@
+include ./Makefile.in.seq.x86
+include ./Makefile.common

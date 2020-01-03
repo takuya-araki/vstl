@@ -1,0 +1,21 @@
+ARCH := ve
+# If you use NLC use below definition
+#NLC_VERSION := $(shell ls /opt/nec/ve/nlc | sort -V -r | head -1)
+#NLC_INC := /opt/nec/ve/nlc/${NLC_VERSION}/include
+#NLC_LIB := /opt/nec/ve/nlc/${NLC_VERSION}/lib
+
+CXX := nc++
+AR := nar
+#CXXFLAGS_COMMON := -O4 -fno-defer-inline-template-instantiation -I${NLC_INC} -fdiag-vector=2 -msched-block
+CXXFLAGS_COMMON := -O4 -fno-defer-inline-template-instantiation -fdiag-vector=2 -msched-block
+
+# if you use fortran compiled library (like blas), use nfort for link
+#LINK := nfort -cxxlib -static 
+LINK := nc++
+
+#LIBS_COMMON := -L${NLC_LIB}
+
+TO_CLEAN := *.o *~
+
+.cc.o:
+	${CXX} -c ${CXXFLAGS} $< -o $@

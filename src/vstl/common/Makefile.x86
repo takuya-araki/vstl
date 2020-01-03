@@ -1,0 +1,5 @@
+include ../../../Makefile.in.seq.x86
+include Makefile.common
+
+libvstl_common.a: ${OBJS}
+	${AR} r libvstl_common.a ${OBJS}

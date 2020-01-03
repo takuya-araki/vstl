@@ -1,0 +1,69 @@
+TARGETS := radix_sort radix_sort_desc prefix_sum set_intersection set_union set_difference set_merge set_merge_desc set_merge_pair set_merge_pair_desc set_separate set_unique lower_bound upper_bound hashtable join
+TO_INSTALL := sample_util.hpp radix_sort.cc radix_sort_desc.cc prefix_sum.cc set_intersection.cc set_union.cc set_difference.cc set_merge.cc set_merge_desc.cc set_merge_pair.cc set_merge_pair_desc.cc set_separate.cc set_unique.cc lower_bound.cc upper_bound.cc hashtable.cc join.cc
+
+LIBS := -L../../src/vstl/seq/core -lvstl_core_seq -L../../src/vstl/common/ -lvstl_common
+INCLUDES := -I../../src/
+#LIBS := -L__INSTALLPATH__/lib -lvstl_core_seq -lvstl_common
+#INCLUDES := -I__INSTALLPATH__/include
+
+CXXFLAGS := ${INCLUDES} ${CXXFLAGS_COMMON}
+
+all: ${TARGETS}
+
+radix_sort: radix_sort.o
+	${LINK} -o radix_sort radix_sort.o ${LIBS}
+
+radix_sort_desc: radix_sort_desc.o
+	${LINK} -o radix_sort_desc radix_sort_desc.o ${LIBS}
+
+prefix_sum: prefix_sum.o
+	${LINK} -o prefix_sum prefix_sum.o ${LIBS}
+
+set_intersection: set_intersection.o
+	${LINK} -o set_intersection set_intersection.o ${LIBS}
+
+set_union: set_union.o
+	${LINK} -o set_union set_union.o ${LIBS}
+
+set_difference: set_difference.o
+	${LINK} -o set_difference set_difference.o ${LIBS}
+
+set_merge: set_merge.o
+	${LINK} -o set_merge set_merge.o ${LIBS}
+
+set_merge_desc: set_merge_desc.o
+	${LINK} -o set_merge_desc set_merge_desc.o ${LIBS}
+
+set_merge_pair: set_merge_pair.o
+	${LINK} -o set_merge_pair set_merge_pair.o ${LIBS}
+
+set_merge_pair_desc: set_merge_pair_desc.o
+	${LINK} -o set_merge_pair_desc set_merge_pair_desc.o ${LIBS}
+
+set_separate: set_separate.o
+	${LINK} -o set_separate set_separate.o ${LIBS}
+
+set_unique: set_unique.o
+	${LINK} -o set_unique set_unique.o ${LIBS}
+
+lower_bound: lower_bound.o
+	${LINK} -o lower_bound lower_bound.o ${LIBS}
+
+upper_bound: upper_bound.o
+	${LINK} -o upper_bound upper_bound.o ${LIBS}
+
+hashtable: hashtable.o
+	${LINK} -o hashtable hashtable.o ${LIBS}
+
+join: join.o
+	${LINK} -o join join.o ${LIBS}
+
+clean:
+	${RM} ${TO_CLEAN} ${TARGETS}
+
+install:
+	mkdir -p ${INSTALLPATH}/samples/
+	cp ${TO_INSTALL} ${INSTALLPATH}/samples/
+	cp Makefile.${ARCH} ${INSTALLPATH}/samples/Makefile
+	cp Makefile.in.seq.${ARCH} ${INSTALLPATH}/samples
+	cat Makefile.common | sed -e /^LIBS/d | sed -e /^INCLUDES/d |sed -e s/^\#LIBS/LIBS/ |  sed -e s/^#INCLUDES/INCLUDES/g | sed -e /^install/,'$$'d | sed -e s#__INSTALLPATH__#${INSTALLPATH}#g > tmp; cp tmp ${INSTALLPATH}/samples/Makefile.common; rm tmp

@@ -1,0 +1,13 @@
+ARCH := x86
+CXX := g++
+CXXFLAGS_COMMON := -fPIC -g -Wall -O3 -std=c++11 -Wno-unknown-pragmas -Wno-sign-compare
+
+# check the library name of your distribution
+LIBS_COMMON := 
+
+LINK := g++
+
+TO_CLEAN := *.o *~
+
+.cc.o: 
+	${CXX} -c ${CXXFLAGS} $< -o $@

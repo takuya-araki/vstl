@@ -1,0 +1,5 @@
+include ../../../../Makefile.in.seq.ve
+include ./Makefile.common
+
+libvstl_core_seq.a: ${OBJS}
+	${AR} r libvstl_core_seq.a ${OBJS}

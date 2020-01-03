@@ -1,0 +1,20 @@
+HEADERS := radix_sort.hpp radix_sort.incl prefix_sum.hpp set_operations.hpp set_operations.incl1 set_operations.incl2 lower_bound.hpp upper_bound.hpp hashtable.hpp join.hpp
+
+CXXFLAGS := -I../../.. ${CXXFLAGS_COMMON}
+
+OBJS := join.o
+
+TARGETS := libvstl_core_seq.a
+
+targets: ${TARGETS}
+
+install: ${TARGETS}
+	mkdir -p ${INSTALLPATH}/lib
+	cp libvstl_core_seq.a ${INSTALLPATH}/lib/
+	mkdir -p ${INSTALLPATH}/include/vstl/seq/core
+	cp ${HEADERS} ${INSTALLPATH}/include/vstl/seq/core
+
+clean:
+	${RM} ${TO_CLEAN} ${TARGETS} 
+
+join.o: join.cc join.hpp hashtable.hpp

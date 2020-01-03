@@ -1,0 +1,3 @@
+include ./Makefile.in.seq.ve
+
+CXXFLAGS_COMMON += -fopenmp

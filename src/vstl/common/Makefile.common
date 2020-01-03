@@ -1,0 +1,18 @@
+HEADERS := utility.hpp
+
+OBJS := utility.o
+
+TARGETS := libvstl_common.a
+
+targets: ${TARGETS}
+
+install: ${TARGETS}
+	mkdir -p ${INSTALLPATH}/lib
+	cp libvstl_common.a ${INSTALLPATH}/lib/
+	mkdir -p ${INSTALLPATH}/include/vstl/common
+	cp ${HEADERS} ${INSTALLPATH}/include/vstl/common
+
+clean:
+	${RM} ${TO_CLEAN} ${TARGETS} 
+
+utility.o: utility.cc utility.hpp
