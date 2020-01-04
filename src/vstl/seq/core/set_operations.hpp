@@ -1603,7 +1603,7 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
 
 template <class T>
 void set_unique_vreg(const T* keyp, size_t* key_idx, size_t* key_idx_stop,
-                     size_t* outp, size_t* out_idx, 
+                     T* outp, size_t* out_idx, 
                      size_t max_size, T* current_key) {
 #include "set_operations.incl3"
   for(size_t j = 0; j < max_size; j++) {
@@ -1655,9 +1655,9 @@ void set_unique_vreg(const T* keyp, size_t* key_idx, size_t* key_idx_stop,
 }
 
 template <class T>
-std::vector<size_t> set_unique(const std::vector<T>& key) {
+std::vector<T> set_unique(const std::vector<T>& key) {
   size_t size = key.size();
-  if(size == 0) {return std::vector<size_t>(1);} 
+  if(size == 0) {return std::vector<T>();} 
   size_t each = ceil_div(size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
   size_t key_idx[SET_VLEN];
@@ -1665,9 +1665,9 @@ std::vector<size_t> set_unique(const std::vector<T>& key) {
   size_t out_idx[SET_VLEN];
   size_t out_idx_save[SET_VLEN];
   T current_key[SET_VLEN];
-  std::vector<size_t> out;
+  std::vector<T> out;
   out.resize(size);
-  size_t* outp = &out[0];
+  T* outp = &out[0];
   const T* keyp = &key[0];
   if(size > 0) {
     key_idx[0] = 1;
@@ -1710,8 +1710,8 @@ std::vector<size_t> set_unique(const std::vector<T>& key) {
   for(size_t i = 0; i < SET_VLEN; i++) {
     total += out_idx[i] - out_idx_save[i];
   }
-  std::vector<size_t> ret(total);
-  size_t* retp = &ret[0];
+  std::vector<T> ret(total);
+  T* retp = &ret[0];
   size_t current = 0;
   for(size_t i = 0; i < SET_VLEN; i++) {
     for(size_t j = 0; j < out_idx[i] - out_idx_save[i]; j++) {
