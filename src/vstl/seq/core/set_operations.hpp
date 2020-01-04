@@ -1479,13 +1479,63 @@ void set_merge_pair_desc(const std::vector<T>& left,
   }
 }
 
-// TODO: modify to use vreg
+template <class T>
+void set_separate_vreg(const T* keyp, size_t* key_idx, size_t* key_idx_stop,
+                       size_t* outp, size_t* out_idx, 
+                       size_t max_size, T* current_key) {
+#include "set_operations.incl3"
+  for(size_t j = 0; j < max_size; j++) {
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_0[i] != key_idx_stop_vreg_0[i])
+        loaded_key_vreg_0[i] = keyp[key_idx_vreg_0[i]];
+      if(key_idx_vreg_1[i] != key_idx_stop_vreg_1[i])
+        loaded_key_vreg_1[i] = keyp[key_idx_vreg_1[i]];
+      if(key_idx_vreg_2[i] != key_idx_stop_vreg_2[i])
+        loaded_key_vreg_2[i] = keyp[key_idx_vreg_2[i]];
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_0[i] != key_idx_stop_vreg_0[i]) {
+        if(loaded_key_vreg_0[i] != current_key_vreg_0[i]) {
+          outp[out_idx_vreg_0[i]++] = key_idx_vreg_0[i];
+          current_key_vreg_0[i] = loaded_key_vreg_0[i];
+        }
+        key_idx_vreg_0[i]++;
+      }
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_1[i] != key_idx_stop_vreg_1[i]) {
+        if(loaded_key_vreg_1[i] != current_key_vreg_1[i]) {
+          outp[out_idx_vreg_1[i]++] = key_idx_vreg_1[i];
+          current_key_vreg_1[i] = loaded_key_vreg_1[i];
+        }
+        key_idx_vreg_1[i]++;
+      }
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_2[i] != key_idx_stop_vreg_2[i]) {
+        if(loaded_key_vreg_2[i] != current_key_vreg_2[i]) {
+          outp[out_idx_vreg_2[i]++] = key_idx_vreg_2[i];
+          current_key_vreg_2[i] = loaded_key_vreg_2[i];
+        }
+        key_idx_vreg_2[i]++;
+      }
+    }
+  }
+  for(size_t i = 0; i < SET_VLEN_EACH; i++) {
+    out_idx[i] = out_idx_vreg_0[i];
+    out_idx[SET_VLEN_EACH + i] = out_idx_vreg_1[i];
+    out_idx[SET_VLEN_EACH * 2 + i] = out_idx_vreg_2[i];
+  }
+}
+
 template <class T>
 std::vector<size_t> set_separate(const std::vector<T>& key) {
   size_t size = key.size();
   if(size == 0) {return std::vector<size_t>(1);} 
-  int valid[SET_VLEN];
-  for(int i = 0; i < SET_VLEN; i++) valid[i] = true;
   size_t each = ceil_div(size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
   size_t key_idx[SET_VLEN];
@@ -1504,7 +1554,6 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
     out_idx_save[0] = 0;
     current_key[0] = keyp[0];
   } else {
-    valid[0] = false;
     key_idx[0] = size;
     out_idx[0] = size;
     out_idx_save[0] = size;
@@ -1517,7 +1566,6 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
       out_idx_save[i] = pos;
       current_key[i] = keyp[pos-1];
     } else {
-      valid[i] = false;
       key_idx[i] = size;
       out_idx[i] = size;
       out_idx_save[i] = size;
@@ -1527,28 +1575,15 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
     key_idx_stop[i] = key_idx[i + 1];
   }
   key_idx_stop[SET_VLEN-1] = size;
-  // idx 0 is manually advanced; need to be checked
-  if(key_idx[0] == key_idx_stop[0]) valid[0] = false;
   size_t max_size = 0;
   for(int i = 0; i < SET_VLEN; i++) {
     auto current = key_idx_stop[i] - key_idx[i];
     if(max_size < current) max_size = current;
   }
-  for(size_t j = 0; j < max_size; j++) {
-#pragma cdir nodep
-#pragma _NEC ivdep
-    for(int i = 0; i < SET_VLEN; i++) {
-      if(valid[i]) {
-        auto keyval = keyp[key_idx[i]];
-        if(keyval != current_key[i]) {
-          outp[out_idx[i]++] = key_idx[i];
-          current_key[i] = keyval;
-        }
-        key_idx[i]++;
-        if(key_idx[i] == key_idx_stop[i]) {valid[i] = false;}
-      }
-    }
-  }
+
+  set_separate_vreg(keyp, key_idx, key_idx_stop, outp, out_idx, 
+                    max_size, current_key);
+
   size_t total = 0;
   for(size_t i = 0; i < SET_VLEN; i++) {
     total += out_idx[i] - out_idx_save[i];
@@ -1567,11 +1602,62 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
 }
 
 template <class T>
-std::vector<T> set_unique(const std::vector<T>& key) {
+void set_unique_vreg(const T* keyp, size_t* key_idx, size_t* key_idx_stop,
+                     size_t* outp, size_t* out_idx, 
+                     size_t max_size, T* current_key) {
+#include "set_operations.incl3"
+  for(size_t j = 0; j < max_size; j++) {
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_0[i] != key_idx_stop_vreg_0[i])
+        loaded_key_vreg_0[i] = keyp[key_idx_vreg_0[i]];
+      if(key_idx_vreg_1[i] != key_idx_stop_vreg_1[i])
+        loaded_key_vreg_1[i] = keyp[key_idx_vreg_1[i]];
+      if(key_idx_vreg_2[i] != key_idx_stop_vreg_2[i])
+        loaded_key_vreg_2[i] = keyp[key_idx_vreg_2[i]];
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_0[i] != key_idx_stop_vreg_0[i]) {
+        if(loaded_key_vreg_0[i] != current_key_vreg_0[i]) {
+          outp[out_idx_vreg_0[i]++] = loaded_key_vreg_0[i];
+          current_key_vreg_0[i] = loaded_key_vreg_0[i];
+        }
+        key_idx_vreg_0[i]++;
+      }
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_1[i] != key_idx_stop_vreg_1[i]) {
+        if(loaded_key_vreg_1[i] != current_key_vreg_1[i]) {
+          outp[out_idx_vreg_1[i]++] = loaded_key_vreg_1[i];
+          current_key_vreg_1[i] = loaded_key_vreg_1[i];
+        }
+        key_idx_vreg_1[i]++;
+      }
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_2[i] != key_idx_stop_vreg_2[i]) {
+        if(loaded_key_vreg_2[i] != current_key_vreg_2[i]) {
+          outp[out_idx_vreg_2[i]++] = loaded_key_vreg_2[i];
+          current_key_vreg_2[i] = loaded_key_vreg_2[i];
+        }
+        key_idx_vreg_2[i]++;
+      }
+    }
+  }
+  for(size_t i = 0; i < SET_VLEN_EACH; i++) {
+    out_idx[i] = out_idx_vreg_0[i];
+    out_idx[SET_VLEN_EACH + i] = out_idx_vreg_1[i];
+    out_idx[SET_VLEN_EACH * 2 + i] = out_idx_vreg_2[i];
+  }
+}
+
+template <class T>
+std::vector<size_t> set_unique(const std::vector<T>& key) {
   size_t size = key.size();
-  if(size == 0) {return std::vector<T>();} 
-  int valid[SET_VLEN];
-  for(int i = 0; i < SET_VLEN; i++) valid[i] = true;
+  if(size == 0) {return std::vector<size_t>(1);} 
   size_t each = ceil_div(size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
   size_t key_idx[SET_VLEN];
@@ -1579,18 +1665,17 @@ std::vector<T> set_unique(const std::vector<T>& key) {
   size_t out_idx[SET_VLEN];
   size_t out_idx_save[SET_VLEN];
   T current_key[SET_VLEN];
-  std::vector<T> out;
+  std::vector<size_t> out;
   out.resize(size);
-  T* outp = &out[0];
+  size_t* outp = &out[0];
   const T* keyp = &key[0];
   if(size > 0) {
     key_idx[0] = 1;
-    outp[0] = keyp[0];
+    outp[0] = 0;
     out_idx[0] = 1;
     out_idx_save[0] = 0;
     current_key[0] = keyp[0];
   } else {
-    valid[0] = false;
     key_idx[0] = size;
     out_idx[0] = size;
     out_idx_save[0] = size;
@@ -1603,7 +1688,6 @@ std::vector<T> set_unique(const std::vector<T>& key) {
       out_idx_save[i] = pos;
       current_key[i] = keyp[pos-1];
     } else {
-      valid[i] = false;
       key_idx[i] = size;
       out_idx[i] = size;
       out_idx_save[i] = size;
@@ -1613,38 +1697,23 @@ std::vector<T> set_unique(const std::vector<T>& key) {
     key_idx_stop[i] = key_idx[i + 1];
   }
   key_idx_stop[SET_VLEN-1] = size;
-  // idx 0 is manually advanced; need to be checked
-  if(key_idx[0] == key_idx_stop[0]) valid[0] = false; 
   size_t max_size = 0;
   for(int i = 0; i < SET_VLEN; i++) {
     auto current = key_idx_stop[i] - key_idx[i];
     if(max_size < current) max_size = current;
   }
-  for(size_t j = 0; j < max_size; j++) {
-#pragma cdir nodep
-#pragma _NEC ivdep
-    for(int i = 0; i < SET_VLEN; i++) {
-      if(valid[i]) {
-        auto keyval = keyp[key_idx[i]];
-        if(keyval != current_key[i]) {
-          outp[out_idx[i]++] = keyval;
-          current_key[i] = keyval;
-        }
-        key_idx[i]++;
-        if(key_idx[i] == key_idx_stop[i]) {valid[i] = false;}
-      }
-    }
-  }
+
+  set_unique_vreg(keyp, key_idx, key_idx_stop, outp, out_idx, 
+                  max_size, current_key);
+
   size_t total = 0;
   for(size_t i = 0; i < SET_VLEN; i++) {
     total += out_idx[i] - out_idx_save[i];
   }
-  std::vector<T> ret(total);
-  T* retp = &ret[0];
+  std::vector<size_t> ret(total);
+  size_t* retp = &ret[0];
   size_t current = 0;
   for(size_t i = 0; i < SET_VLEN; i++) {
-#pragma cdir nodep
-#pragma _NEC ivdep
     for(size_t j = 0; j < out_idx[i] - out_idx_save[i]; j++) {
       retp[current + j] = out[out_idx_save[i] + j];
     }
@@ -1653,17 +1722,91 @@ std::vector<T> set_unique(const std::vector<T>& key) {
   return ret;
 }
 
-// TODO: modify to use alloc_on_vreg
+template <class T>
+int set_is_unique_vreg(const T* keyp, size_t* key_idx, size_t* key_idx_stop,
+                       size_t max_size, T* current_key) {
+  size_t key_idx_vreg_0[SET_VLEN_EACH];
+  size_t key_idx_vreg_1[SET_VLEN_EACH];
+  size_t key_idx_vreg_2[SET_VLEN_EACH];
+  size_t key_idx_stop_vreg_0[SET_VLEN_EACH];
+  size_t key_idx_stop_vreg_1[SET_VLEN_EACH];
+  size_t key_idx_stop_vreg_2[SET_VLEN_EACH];
+  T current_key_vreg_0[SET_VLEN_EACH];
+  T current_key_vreg_1[SET_VLEN_EACH];
+  T current_key_vreg_2[SET_VLEN_EACH];
+  T loaded_key_vreg_0[SET_VLEN_EACH];
+  T loaded_key_vreg_1[SET_VLEN_EACH];
+  T loaded_key_vreg_2[SET_VLEN_EACH];
+#pragma _NEC vreg(key_idx_vreg_0)
+#pragma _NEC vreg(key_idx_vreg_1)
+#pragma _NEC vreg(key_idx_vreg_2)
+#pragma _NEC vreg(key_idx_stop_vreg_0)
+#pragma _NEC vreg(key_idx_stop_vreg_1)
+#pragma _NEC vreg(key_idx_stop_vreg_2)
+#pragma _NEC vreg(current_key_vreg_0)
+#pragma _NEC vreg(current_key_vreg_1)
+#pragma _NEC vreg(current_key_vreg_2)
+#pragma _NEC vreg(loaded_key_vreg_0)
+#pragma _NEC vreg(loaded_key_vreg_1)
+#pragma _NEC vreg(loaded_key_vreg_2)
+  for(size_t i = 0; i < SET_VLEN_EACH; i++) {
+    key_idx_vreg_0[i] = key_idx[i];
+    key_idx_vreg_1[i] = key_idx[SET_VLEN_EACH + i];
+    key_idx_vreg_2[i] = key_idx[SET_VLEN_EACH * 2 + i];
+    key_idx_stop_vreg_0[i] = key_idx_stop[i];
+    key_idx_stop_vreg_1[i] = key_idx_stop[SET_VLEN_EACH + i];
+    key_idx_stop_vreg_2[i] = key_idx_stop[SET_VLEN_EACH * 2 + i];
+    current_key_vreg_0[i] = current_key[i];
+    current_key_vreg_1[i] = current_key[SET_VLEN_EACH + i];
+    current_key_vreg_2[i] = current_key[SET_VLEN_EACH * 2 + i];
+  }
+  int is_unique = true;
+  for(size_t j = 0; j < max_size; j++) {
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_0[i] != key_idx_stop_vreg_0[i])
+        loaded_key_vreg_0[i] = keyp[key_idx_vreg_0[i]];
+      if(key_idx_vreg_1[i] != key_idx_stop_vreg_1[i])
+        loaded_key_vreg_1[i] = keyp[key_idx_vreg_1[i]];
+      if(key_idx_vreg_2[i] != key_idx_stop_vreg_2[i])
+        loaded_key_vreg_2[i] = keyp[key_idx_vreg_2[i]];
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_0[i] != key_idx_stop_vreg_0[i]) {
+        if(loaded_key_vreg_0[i] == current_key_vreg_0[i]) {
+          is_unique = false;
+        }
+        key_idx_vreg_0[i]++;
+      }
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_1[i] != key_idx_stop_vreg_1[i]) {
+        if(loaded_key_vreg_1[i] == current_key_vreg_1[i]) {
+          is_unique = false;
+        }
+        key_idx_vreg_1[i]++;
+      }
+    }
+#pragma _NEC ivdep
+    for(int i = 0; i < SET_VLEN_EACH; i++) {
+      if(key_idx_vreg_2[i] != key_idx_stop_vreg_2[i]) {
+        if(loaded_key_vreg_2[i] == current_key_vreg_2[i]) {
+          is_unique = false;
+        }
+        key_idx_vreg_2[i]++;
+      }
+    }
+    if(is_unique == false) break;
+  }
+  return is_unique;
+}
+
 template <class T>
 int set_is_unique(const std::vector<T>& key) {
   size_t size = key.size();
-  if(size == 0) return true;
-  int valid[SET_VLEN];
-  int is_unique[SET_VLEN];
-  for(int i = 0; i < SET_VLEN; i++) {
-    valid[i] = true;
-    is_unique[i] = true;
-  }
+  if(size == 0) {return true;} 
   size_t each = ceil_div(size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
   size_t key_idx[SET_VLEN];
@@ -1674,7 +1817,6 @@ int set_is_unique(const std::vector<T>& key) {
     key_idx[0] = 1;
     current_key[0] = keyp[0];
   } else {
-    valid[0] = false;
     key_idx[0] = size;
   }
   for(int i = 1; i < SET_VLEN; i++) {
@@ -1683,7 +1825,6 @@ int set_is_unique(const std::vector<T>& key) {
       key_idx[i] = pos;
       current_key[i] = keyp[pos-1];
     } else {
-      valid[i] = false;
       key_idx[i] = size;
     }
   }
@@ -1691,32 +1832,15 @@ int set_is_unique(const std::vector<T>& key) {
     key_idx_stop[i] = key_idx[i + 1];
   }
   key_idx_stop[SET_VLEN-1] = size;
-  // idx 0 is manually advanced; need to be checked
-  if(key_idx[0] == key_idx_stop[0]) valid[0] = false; 
   size_t max_size = 0;
   for(int i = 0; i < SET_VLEN; i++) {
     auto current = key_idx_stop[i] - key_idx[i];
     if(max_size < current) max_size = current;
   }
-  int any_unique = true;
-  for(size_t j = 0; j < max_size; j++) {
-#pragma cdir nodep
-#pragma _NEC ivdep
-    for(int i = 0; i < SET_VLEN; i++) {
-      if(valid[i]) {
-        auto keyval = keyp[key_idx[i]];
-        if(keyval != current_key[i]) current_key[i] = keyval;
-        else is_unique[i] = false;
-        key_idx[i]++;
-        if(key_idx[i] == key_idx_stop[i]) {valid[i] = false;}
-      }
-    }
-    for(int i = 0; i < SET_VLEN; i++) if(!is_unique[i]) any_unique = false;
-    if(any_unique == false) break;
-  }
-  return any_unique;
-}
 
+  return set_is_unique_vreg(keyp, key_idx, key_idx_stop, 
+                            max_size, current_key);
+}
 
 #endif // _SX
 
