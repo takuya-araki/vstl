@@ -14,7 +14,7 @@ int main(int argc, char* argv[]){
   for(auto i: s1) cout << i << " ";
   cout << endl;
 
-  auto key = gen_random<double>(argc, argv);
+  auto key = gen_random<int>(argc, argv);
   vstl::seq::radix_sort(key);
   auto t1 = vstl::get_dtime();
   auto sep = vstl::seq::set_separate(key);
