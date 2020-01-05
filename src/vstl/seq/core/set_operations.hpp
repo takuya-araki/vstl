@@ -1159,8 +1159,6 @@ void set_merge_pair(const std::vector<T>& left,
                     const std::vector<K>& right_val,
                     std::vector<T>& out,
                     std::vector<K>& out_val) {
-  int valid[SET_VLEN];
-  for(int i = 0; i < SET_VLEN; i++) valid[i] = true;
   size_t left_size = left.size();
   size_t right_size = right.size();
   if(left_size == 0) {
@@ -1356,8 +1354,6 @@ void set_merge_pair_desc(const std::vector<T>& left,
                          const std::vector<K>& right_val,
                          std::vector<T>& out,
                          std::vector<K>& out_val) {
-  int valid[SET_VLEN];
-  for(int i = 0; i < SET_VLEN; i++) valid[i] = true;
   size_t left_size = left.size();
   size_t right_size = right.size();
   if(left_size == 0) {
@@ -1496,7 +1492,7 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
   size_t size = key.size();
   if(size == 0) {return std::vector<size_t>(1);} 
   size_t each = ceil_div(size, size_t(SET_VLEN));
-  if(each % 2 == 0) each++;
+  if(each % 2 == 0) each++; // need to make each > 0
   size_t key_idx[SET_VLEN];
   size_t key_idx_stop[SET_VLEN];
   size_t out_idx[SET_VLEN];
@@ -1506,24 +1502,18 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
   out.resize(size);
   size_t* outp = &out[0];
   const T* keyp = &key[0];
-  if(size > 0) {
-    key_idx[0] = 1;
-    outp[0] = 0;
-    out_idx[0] = 1;
-    out_idx_save[0] = 0;
-    current_key[0] = keyp[0];
-  } else {
-    key_idx[0] = size;
-    out_idx[0] = size;
-    out_idx_save[0] = size;
-  }
+  key_idx[0] = 1;
+  outp[0] = 0;
+  out_idx[0] = 1;
+  out_idx_save[0] = 0;
+  current_key[0] = keyp[0]; // size > 0
   for(int i = 1; i < SET_VLEN; i++) {
     size_t pos = each * i;
     if(pos < size) {
       key_idx[i] = pos;
       out_idx[i] = pos;
       out_idx_save[i] = pos;
-      current_key[i] = keyp[pos-1];
+      current_key[i] = keyp[pos-1]; // each > 0
     } else {
       key_idx[i] = size;
       out_idx[i] = size;
@@ -1628,17 +1618,11 @@ std::vector<T> set_unique(const std::vector<T>& key) {
   out.resize(size);
   T* outp = &out[0];
   const T* keyp = &key[0];
-  if(size > 0) {
-    key_idx[0] = 1;
-    outp[0] = 0;
-    out_idx[0] = 1;
-    out_idx_save[0] = 0;
-    current_key[0] = keyp[0];
-  } else {
-    key_idx[0] = size;
-    out_idx[0] = size;
-    out_idx_save[0] = size;
-  }
+  key_idx[0] = 1;
+  outp[0] = 0;
+  out_idx[0] = 1;
+  out_idx_save[0] = 0;
+  current_key[0] = keyp[0];
   for(int i = 1; i < SET_VLEN; i++) {
     size_t pos = each * i;
     if(pos < size) {
@@ -1772,12 +1756,8 @@ int set_is_unique(const std::vector<T>& key) {
   size_t key_idx_stop[SET_VLEN];
   T current_key[SET_VLEN];
   const T* keyp = &key[0];
-  if(size > 0) {
-    key_idx[0] = 1;
-    current_key[0] = keyp[0];
-  } else {
-    key_idx[0] = size;
-  }
+  key_idx[0] = 1;
+  current_key[0] = keyp[0];
   for(int i = 1; i < SET_VLEN; i++) {
     size_t pos = each * i;
     if(pos < size) {
