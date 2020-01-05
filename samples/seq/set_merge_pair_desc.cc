@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
   cout << endl;
   std::vector<int> o1, ov1;
   vstl::seq::set_merge_pair_desc(l1,lv1,r1,rv1,o1,ov1);
-  cout << "merge_pair: " << endl;
+  cout << "merge_pair_desc: " << endl;
   cout << "out: ";
   for(auto i: o1) cout << i << " ";
   cout << endl;

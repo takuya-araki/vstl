@@ -13,7 +13,7 @@ int main(int argc, char* argv[]){
   for(auto i: r1) cout << i << " ";
   cout << endl;
   auto res = vstl::seq::set_difference(l1,r1);
-  cout << "union: " << endl;
+  cout << "difference: " << endl;
   for(auto i: res) cout << i << " ";
   cout << endl;
 
