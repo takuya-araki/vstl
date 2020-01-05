@@ -13,7 +13,7 @@ int main(int argc, char* argv[]){
   for(auto i: f1) cout << i << " ";
   cout << endl;
   auto res = vstl::seq::upper_bound(s1,f1);
-  cout << "lower_bound: " << endl;
+  cout << "upper_bound: " << endl;
   for(auto i: res) cout << i << " ";
   cout << endl;
 
