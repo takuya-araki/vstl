@@ -9,7 +9,6 @@
 #include "../core/lower_bound.hpp"
 #include "../core/upper_bound.hpp"
 
-
 #define SET_VLEN 768
 #define SET_VLEN_EACH 256
 
@@ -18,51 +17,51 @@ namespace seq {
 
 #if !(defined(_SX) || defined(__ve__))
 template <class T>
-std::vector<T> set_intersection(const std::vector<T>& left,
-                                const std::vector<T>& right) {
+std::vector<T> set_intersection(const T* leftp, size_t left_size,
+                                const T* rightp, size_t right_size) {
   std::vector<T> ret;
-  std::set_intersection(left.begin(), left.end(),
-                        right.begin(), right.end(),
+  std::set_intersection(leftp, leftp + left_size,
+                        rightp, rightp + right_size,
                         std::back_inserter(ret));
   return ret;
 }
 
 template <class T>
-std::vector<T> set_union(const std::vector<T>& left,
-                         const std::vector<T>& right) {
+std::vector<T> set_union(const T* leftp, size_t left_size,
+                         const T* rightp, size_t right_size) {
   std::vector<T> ret;
-  std::set_union(left.begin(), left.end(),
-                 right.begin(), right.end(),
+  std::set_union(leftp, leftp + left_size,
+                 rightp, rightp + right_size,
                  std::back_inserter(ret));
   return ret;
 }
 
 template <class T>
-std::vector<T> set_difference(const std::vector<T>& left,
-                              const std::vector<T>& right) {
+std::vector<T> set_difference(const T* leftp, size_t left_size,
+                              const T* rightp, size_t right_size) {
   std::vector<T> ret;
-  std::set_difference(left.begin(), left.end(),
-                      right.begin(), right.end(),
+  std::set_difference(leftp, leftp + left_size,
+                      rightp, rightp + right_size,
                       std::back_inserter(ret));
   return ret;
 }
 
 template <class T>
-std::vector<T> set_merge(const std::vector<T>& left,
-                         const std::vector<T>& right) {
+std::vector<T> set_merge(const T* leftp, size_t left_size,
+                         const T* rightp, size_t right_size) {
   std::vector<T> ret;
-  std::merge(left.begin(), left.end(),
-             right.begin(), right.end(),
+  std::merge(leftp, leftp + left_size,
+             rightp, rightp + right_size,
              std::back_inserter(ret));
   return ret;
 }
 
 template <class T>
-std::vector<T> set_merge_desc(const std::vector<T>& left,
-                              const std::vector<T>& right) {
+std::vector<T> set_merge_desc(const T* leftp, size_t left_size,
+                              const T* rightp, size_t right_size) {
   std::vector<T> ret;
-  std::merge(left.begin(), left.end(),
-             right.begin(), right.end(),
+  std::merge(leftp, leftp + left_size,
+             rightp, rightp + right_size,
              std::back_inserter(ret), std::greater<T>());
   return ret;
 }
@@ -76,28 +75,28 @@ struct set_merge_pair_helper {
 };
 
 template <class T, class K>
-void set_merge_pair(const std::vector<T>& left,
-                    const std::vector<K>& left_val,
-                    const std::vector<T>& right,
-                    const std::vector<K>& right_val,
+void set_merge_pair(const T* leftp,
+                    const K* left_valp,
+                    size_t left_size,
+                    const T* rightp,
+                    const K* right_valp,
+                    size_t right_size,
                     std::vector<T>& out,
                     std::vector<K>& out_val) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
   std::vector<std::pair<T,K>> left_pair(left_size);
   std::vector<std::pair<T,K>> right_pair(right_size);
   std::vector<std::pair<T,K>> out_pair;
   for(size_t i = 0; i < left_size; i++) {
-    left_pair[i].first = left[i];
-    left_pair[i].second = left_val[i];
+    left_pair[i].first = leftp[i];
+    left_pair[i].second = left_valp[i];
   }
   for(size_t i = 0; i < right_size; i++) {
-    right_pair[i].first = right[i];
-    right_pair[i].second = right_val[i];
+    right_pair[i].first = rightp[i];
+    right_pair[i].second = right_valp[i];
   }
   std::merge(left_pair.begin(), left_pair.end(),
              right_pair.begin(), right_pair.end(),
-             std::back_inserter(out_pair),set_merge_pair_helper<T,K>());
+             std::back_inserter(out_pair), set_merge_pair_helper<T,K>());
   out.resize(left_size + right_size);
   out_val.resize(left_size + right_size);
   for(size_t i = 0; i < left_size + right_size; i++) {
@@ -115,24 +114,24 @@ struct set_merge_pair_desc_helper {
 };
 
 template <class T, class K>
-void set_merge_pair_desc(const std::vector<T>& left,
-                         const std::vector<K>& left_val,
-                         const std::vector<T>& right,
-                         const std::vector<K>& right_val,
+void set_merge_pair_desc(const T* leftp,
+                         const K* left_valp,
+                         size_t left_size,
+                         const T* rightp,
+                         const K* right_valp,
+                         size_t right_size,
                          std::vector<T>& out,
                          std::vector<K>& out_val) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
   std::vector<std::pair<T,K>> left_pair(left_size);
   std::vector<std::pair<T,K>> right_pair(right_size);
   std::vector<std::pair<T,K>> out_pair;
   for(size_t i = 0; i < left_size; i++) {
-    left_pair[i].first = left[i];
-    left_pair[i].second = left_val[i];
+    left_pair[i].first = leftp[i];
+    left_pair[i].second = left_valp[i];
   }
   for(size_t i = 0; i < right_size; i++) {
-    right_pair[i].first = right[i];
-    right_pair[i].second = right_val[i];
+    right_pair[i].first = rightp[i];
+    right_pair[i].second = right_valp[i];
   }
   std::merge(left_pair.begin(), left_pair.end(),
              right_pair.begin(), right_pair.end(),
@@ -146,18 +145,17 @@ void set_merge_pair_desc(const std::vector<T>& left,
 }
 
 template <class T>
-std::vector<size_t> set_separate(const std::vector<T>& key) {
-  size_t size = key.size();
+std::vector<size_t> set_separate(const T* keyp, size_t size) {
   std::vector<size_t> ret;
   if(size == 0) {
     ret.push_back(0);
     return ret;
   } else {
-    T current = key[0];
+    T current = keyp[0];
     ret.push_back(0);
     for(size_t i = 1; i < size; i++) {
-      if(key[i] != current) {
-        current = key[i];
+      if(keyp[i] != current) {
+        current = keyp[i];
         ret.push_back(i);
       }
     }
@@ -167,17 +165,16 @@ std::vector<size_t> set_separate(const std::vector<T>& key) {
 }
 
 template <class T>
-std::vector<T> set_unique(const std::vector<T>& key) {
-  size_t size = key.size();
+std::vector<T> set_unique(const T* keyp, size_t size) {
   std::vector<T> ret;
   if(size == 0) {
     return ret;
   } else {
-    T current = key[0];
+    T current = keyp[0];
     ret.push_back(current);
     for(size_t i = 1; i < size; i++) {
-      if(key[i] != current) {
-        current = key[i];
+      if(keyp[i] != current) {
+        current = keyp[i];
         ret.push_back(current);
       }
     }
@@ -186,15 +183,14 @@ std::vector<T> set_unique(const std::vector<T>& key) {
 }
 
 template <class T>
-int set_is_unique(const std::vector<T>& key) {
-  size_t size = key.size();
+int set_is_unique(const T* keyp, size_t size) {
   std::vector<size_t> ret;
   if(size == 0) {
     return true;
   } else {
-    T current = key[0];
+    T current = keyp[0];
     for(size_t i = 1; i < size; i++) {
-      if(key[i] != current) current = key[i];
+      if(keyp[i] != current) current = keyp[i];
       else return false;
     }
     return true;
@@ -360,10 +356,8 @@ void set_intersection_vreg(const T* lp, const T* rp, T* op,
 }
 
 template <class T>
-std::vector<T> set_intersection(const std::vector<T>& left,
-                                const std::vector<T>& right) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
+std::vector<T> set_intersection(const T* leftp, size_t left_size,
+                                const T* rightp, size_t right_size) {
   if(left_size == 0 || right_size == 0) return std::vector<T>();
 
   size_t each = ceil_div(left_size, size_t(SET_VLEN));
@@ -375,10 +369,7 @@ std::vector<T> set_intersection(const std::vector<T>& left,
   size_t right_idx_stop[SET_VLEN];
   size_t out_idx[SET_VLEN];
   size_t out_idx_save[SET_VLEN];
-  std::vector<T> out;
-  out.resize(left_size);
-  auto leftp = left.data();
-  auto rightp = right.data();
+  std::vector<T> out(left_size);
   auto outp = out.data();
 
   for(int i = 0; i < SET_VLEN; i++) {
@@ -406,10 +397,10 @@ std::vector<T> set_intersection(const std::vector<T>& left,
     if(left_idx[i] == left_size) right_idx[i] = right_size; // left is not valid
   }
   for(size_t i = 0; i < SET_VLEN-1; i++) {
-    if(left_idx[i] < left_size) left_start[i] = left[left_idx[i+1]-1];
+    if(left_idx[i] < left_size) left_start[i] = leftp[left_idx[i+1]-1];
     else left_start[i] = 0;
   }
-  left_start[SET_VLEN-1] = left[left_size-1];
+  left_start[SET_VLEN-1] = leftp[left_size-1];
   upper_bound(rightp, right_size, left_start, SET_VLEN, right_idx_stop);
   for(size_t i = 0; i < SET_VLEN; i++) {
     if(left_idx[i] == left_size || right_idx[i] == right_size)
@@ -524,12 +515,20 @@ void set_union_vreg(const T* lp, const T* rp, T* op,
 }
 
 template <class T>
-std::vector<T> set_union(const std::vector<T>& left,
-                         const std::vector<T>& right) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
-  if(left_size == 0) return right;
-  if(right_size == 0) return left;
+std::vector<T> set_union(const T* leftp, size_t left_size,
+                         const T* rightp, size_t right_size) {
+  if(left_size == 0) {
+    std::vector<T> ret(right_size);
+    auto retp = ret.data();
+    for(size_t i = 0; i < right_size; i++) retp[i] = rightp[i];
+    return ret;
+  }
+  if(right_size == 0) {
+    std::vector<T> ret(left_size);
+    auto retp = ret.data();
+    for(size_t i = 0; i < left_size; i++) retp[i] = leftp[i];
+    return ret;
+  }
 
   size_t each = ceil_div(left_size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
@@ -540,10 +539,7 @@ std::vector<T> set_union(const std::vector<T>& left,
   size_t right_idx_stop[SET_VLEN];
   size_t out_idx[SET_VLEN];
   size_t out_idx_save[SET_VLEN];
-  std::vector<T> out;
-  out.resize(left_size + right_size);
-  auto leftp = left.data();
-  auto rightp = right.data();
+  std::vector<T> out(left_size + right_size);
   auto outp = out.data();
   for(int i = 0; i < SET_VLEN; i++) {
     size_t pos = each * i;
@@ -684,12 +680,15 @@ void set_difference_vreg(const T* lp, const T* rp, T* op,
 }
 
 template <class T>
-std::vector<T> set_difference(const std::vector<T>& left,
-                              const std::vector<T>& right) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
+std::vector<T> set_difference(const T* leftp, size_t left_size,
+                              const T* rightp, size_t right_size) {
   if(left_size == 0) return std::vector<T>();
-  if(right_size == 0) return left;
+  if(right_size == 0) {
+    std::vector<T> ret(left_size);
+    auto retp = ret.data();
+    for(size_t i = 0; i < left_size; i++) retp[i] = leftp[i];
+    return ret;
+  }
 
   size_t each = ceil_div(left_size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
@@ -700,10 +699,7 @@ std::vector<T> set_difference(const std::vector<T>& left,
   size_t right_idx_stop[SET_VLEN];
   size_t out_idx[SET_VLEN];
   size_t out_idx_save[SET_VLEN];
-  std::vector<T> out;
-  out.resize(left_size);
-  auto leftp = left.data();
-  auto rightp = right.data();
+  std::vector<T> out(left_size);
   auto outp = out.data();
   for(int i = 0; i < SET_VLEN; i++) {
     size_t pos = each * i;
@@ -834,12 +830,20 @@ void set_merge_vreg(const T* lp, const T* rp, T* op,
 }
 
 template <class T>
-std::vector<T> set_merge(const std::vector<T>& left,
-                         const std::vector<T>& right) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
-  if(left_size == 0) return right;
-  if(right_size == 0) return left;
+std::vector<T> set_merge(const T* leftp, size_t left_size,
+                         const T* rightp, size_t right_size) {
+  if(left_size == 0) {
+    std::vector<T> ret(right_size);
+    auto retp = ret.data();
+    for(size_t i = 0; i < right_size; i++) retp[i] = rightp[i];
+    return ret;
+  }
+  if(right_size == 0) {
+    std::vector<T> ret(left_size);
+    auto retp = ret.data();
+    for(size_t i = 0; i < left_size; i++) retp[i] = leftp[i];
+    return ret;
+  }
 
   size_t each = ceil_div(left_size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
@@ -849,10 +853,7 @@ std::vector<T> set_merge(const std::vector<T>& left,
   size_t left_idx_stop[SET_VLEN];
   size_t right_idx_stop[SET_VLEN];
   size_t out_idx[SET_VLEN];
-  std::vector<T> out;
-  out.resize(left_size + right_size);
-  auto leftp = left.data();
-  auto rightp = right.data();
+  std::vector<T> out(left_size + right_size);
   auto outp = out.data();
   for(int i = 0; i < SET_VLEN; i++) {
     size_t pos = each * i;
@@ -976,12 +977,20 @@ void set_merge_desc_vreg(const T* lp, const T* rp, T* op,
 }
 
 template <class T>
-std::vector<T> set_merge_desc(const std::vector<T>& left,
-                              const std::vector<T>& right) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
-  if(left_size == 0) return right;
-  if(right_size == 0) return left;
+std::vector<T> set_merge_desc(const T* leftp, size_t left_size,
+                              const T* rightp, size_t right_size) {
+  if(left_size == 0) {
+    std::vector<T> ret(right_size);
+    auto retp = ret.data();
+    for(size_t i = 0; i < right_size; i++) retp[i] = rightp[i];
+    return ret;
+  }
+  if(right_size == 0) {
+    std::vector<T> ret(left_size);
+    auto retp = ret.data();
+    for(size_t i = 0; i < left_size; i++) retp[i] = leftp[i];
+    return ret;
+  }
 
   size_t each = ceil_div(left_size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
@@ -991,10 +1000,7 @@ std::vector<T> set_merge_desc(const std::vector<T>& left,
   size_t left_idx_stop[SET_VLEN];
   size_t right_idx_stop[SET_VLEN];
   size_t out_idx[SET_VLEN];
-  std::vector<T> out;
-  out.resize(left_size + right_size);
-  auto leftp = left.data();
-  auto rightp = right.data();
+  std::vector<T> out(left_size + right_size);
   auto outp = out.data();
   for(int i = 0; i < SET_VLEN; i++) {
     size_t pos = each * i;
@@ -1153,26 +1159,32 @@ void set_merge_pair_vreg(const T* lp, const K* lvp, const T* rp, const K* rvp,
 }
 
 template <class T, class K>
-void set_merge_pair(const std::vector<T>& left,
-                    const std::vector<K>& left_val,
-                    const std::vector<T>& right,
-                    const std::vector<K>& right_val,
+void set_merge_pair(const T* leftp,
+                    const K* left_valp,
+                    size_t left_size,
+                    const T* rightp,
+                    const K* right_valp,
+                    size_t right_size,
                     std::vector<T>& out,
                     std::vector<K>& out_val) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
   if(left_size == 0) {
-    out = right;
-    out_val = right_val;
+    out.resize(right_size);
+    auto outp = out.data();
+    for(size_t i = 0; i < right_size; i++) outp[i] = rightp[i];
+    out_val.resize(right_size);
+    auto out_valp = out_val.data();
+    for(size_t i = 0; i < right_size; i++) out_valp[i] = right_valp[i];
     return;
   }
   if(right_size == 0) {
-    out = left;
-    out_val = left_val;
+    out.resize(left_size);
+    auto outp = out.data();
+    for(size_t i = 0; i < left_size; i++) outp[i] = leftp[i];
+    out_val.resize(left_size);
+    auto out_valp = out_val.data();
+    for(size_t i = 0; i < left_size; i++) out_valp[i] = left_valp[i];
     return;
   }
-  if(left_size != left_val.size() || right_size != right_val.size())
-    throw std::runtime_error("sizes of key and value are not the same");
   size_t each = ceil_div(left_size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
   
@@ -1183,10 +1195,6 @@ void set_merge_pair(const std::vector<T>& left,
   size_t out_idx[SET_VLEN];
   out.resize(left_size + right_size);
   out_val.resize(left_size + right_size);
-  auto leftp = left.data();
-  auto left_valp = left_val.data();
-  auto rightp = right.data();
-  auto right_valp = right_val.data();
   auto outp = out.data();
   auto out_valp = out_val.data();
   for(int i = 0; i < SET_VLEN; i++) {
@@ -1348,26 +1356,32 @@ void set_merge_pair_desc_vreg(const T* lp, const K* lvp,
 }
 
 template <class T, class K>
-void set_merge_pair_desc(const std::vector<T>& left,
-                         const std::vector<K>& left_val,
-                         const std::vector<T>& right,
-                         const std::vector<K>& right_val,
+void set_merge_pair_desc(const T* leftp,
+                         const K* left_valp,
+                         size_t left_size,
+                         const T* rightp,
+                         const K* right_valp,
+                         size_t right_size,
                          std::vector<T>& out,
                          std::vector<K>& out_val) {
-  size_t left_size = left.size();
-  size_t right_size = right.size();
   if(left_size == 0) {
-    out = right;
-    out_val = right_val;
+    out.resize(right_size);
+    auto outp = out.data();
+    for(size_t i = 0; i < right_size; i++) outp[i] = rightp[i];
+    out_val.resize(right_size);
+    auto out_valp = out_val.data();
+    for(size_t i = 0; i < right_size; i++) out_valp[i] = right_valp[i];
     return;
   }
   if(right_size == 0) {
-    out = left;
-    out_val = left_val;
+    out.resize(left_size);
+    auto outp = out.data();
+    for(size_t i = 0; i < left_size; i++) outp[i] = leftp[i];
+    out_val.resize(left_size);
+    auto out_valp = out_val.data();
+    for(size_t i = 0; i < left_size; i++) out_valp[i] = left_valp[i];
     return;
   }
-  if(left_size != left_val.size() || right_size != right_val.size())
-    throw std::runtime_error("sizes of key and value are not the same");
   size_t each = ceil_div(left_size, size_t(SET_VLEN));
   if(each % 2 == 0) each++;
   
@@ -1378,10 +1392,6 @@ void set_merge_pair_desc(const std::vector<T>& left,
   size_t out_idx[SET_VLEN];
   out.resize(left_size + right_size);
   out_val.resize(left_size + right_size);
-  auto leftp = left.data();
-  auto left_valp = left_val.data();
-  auto rightp = right.data();
-  auto right_valp = right_val.data();
   auto outp = out.data();
   auto out_valp = out_val.data();
   for(int i = 0; i < SET_VLEN; i++) {
@@ -1476,15 +1486,13 @@ void set_separate_vreg(const T* keyp, size_t* outp, size_t* out_idx,
 }
 
 template <class T>
-std::vector<size_t> set_separate(const std::vector<T>& key) {
-  size_t size = key.size();
+std::vector<size_t> set_separate(const T* keyp, size_t size) {
   if(size == 0) {return std::vector<size_t>(1);} 
   size_t each = size / SET_VLEN_EACH;
   if(each % 2 == 0 && each > 0) each--;
   size_t rest = size - each * SET_VLEN_EACH;
   std::vector<size_t> out(size);
   auto outp = out.data();
-  auto keyp = key.data();
   if(each == 0) {
     auto current = keyp[0];
     outp[0] = 0;
@@ -1577,15 +1585,13 @@ void set_unique_vreg(const T* keyp, T* outp, size_t* out_idx,
 }
 
 template <class T>
-std::vector<T> set_unique(const std::vector<T>& key) {
-  size_t size = key.size();
+std::vector<T> set_unique(const T* keyp, size_t size) {
   if(size == 0) {return std::vector<T>();} 
   size_t each = size / SET_VLEN_EACH;
   if(each % 2 == 0 && each > 0) each--;
   size_t rest = size - each * SET_VLEN_EACH;
   std::vector<T> out(size);
   auto outp = out.data();
-  auto keyp = key.data();
   if(each == 0) {
     auto current = keyp[0];
     outp[0] = current;
@@ -1671,8 +1677,7 @@ int set_is_unique_vreg(const T* keyp, size_t size, size_t each, size_t rest,
 }
 
 template <class T>
-int set_is_unique(const std::vector<T>& key) {
-  size_t size = key.size();
+int set_is_unique(const T* keyp, size_t size) {
   if(size == 0) {return true;} 
   size_t size2 = size - 1;
   size_t each = size2 / SET_VLEN_EACH;
@@ -1680,7 +1685,6 @@ int set_is_unique(const std::vector<T>& key) {
   size_t rest = size2 - each * SET_VLEN_EACH;
   std::vector<T> out(size);
   auto outp = out.data();
-  auto keyp = key.data();
   if(each == 0) {
     auto current = keyp[0];
     outp[0] = current;
@@ -1704,6 +1708,80 @@ int set_is_unique(const std::vector<T>& key) {
 }
 
 #endif // _SX
+
+template <class T>
+std::vector<T> set_intersection(const std::vector<T>& left,
+                                const std::vector<T>& right) {
+  return set_intersection(left.data(), left.size(),
+                          right.data(), right.size());
+}
+
+template <class T>
+std::vector<T> set_union(const std::vector<T>& left,
+                         const std::vector<T>& right) {
+  return set_union(left.data(), left.size(),
+                   right.data(), right.size());
+}
+
+template <class T>
+std::vector<T> set_difference(const std::vector<T>& left,
+                              const std::vector<T>& right) {
+  return set_difference(left.data(), left.size(),
+                        right.data(), right.size());
+}
+
+template <class T>
+std::vector<T> set_merge(const std::vector<T>& left,
+                         const std::vector<T>& right) {
+  return set_merge(left.data(), left.size(),
+                   right.data(), right.size());
+}
+
+template <class T>
+std::vector<T> set_merge_desc(const std::vector<T>& left,
+                              const std::vector<T>& right) {
+  return set_merge_desc(left.data(), left.size(),
+                        right.data(), right.size());
+}
+
+template <class T, class K>
+void set_merge_pair(const std::vector<T>& left,
+                    const std::vector<K>& left_val,
+                    const std::vector<T>& right,
+                    const std::vector<K>& right_val,
+                    std::vector<T>& out,
+                    std::vector<K>& out_val) {
+  set_merge_pair(left.data(), left_val.data(), left.size(),
+                 right.data(), right_val.data(), right.size(),
+                 out, out_val);
+}
+
+template <class T, class K>
+void set_merge_pair_desc(const std::vector<T>& left,
+                         const std::vector<K>& left_val,
+                         const std::vector<T>& right,
+                         const std::vector<K>& right_val,
+                         std::vector<T>& out,
+                         std::vector<K>& out_val) {
+  set_merge_pair_desc(left.data(), left_val.data(), left.size(),
+                      right.data(), right_val.data(), right.size(),
+                      out, out_val);
+}
+
+template <class T>
+std::vector<size_t> set_separate(const std::vector<T>& key) {
+  return set_separate(key.data(), key.size());
+}
+
+template <class T>
+std::vector<T> set_unique(const std::vector<T>& key) {
+  return set_unique(key.data(), key.size());
+}
+
+template <class T>
+int set_is_unique(const std::vector<T>& key) {
+  return set_is_unique(key.data(), key.size());
+}
 
 template <class T, class K>
 void set_multimerge_pair(std::vector<std::vector<T>>& key,
