@@ -1,0 +1,282 @@
+template <class K, class V, class F>
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+void reduce_by_key_count(const K* keyp, const V* valp, size_t size, 
+                         std::vector<K>& outkey, std::vector<V>& outval,
+                         std::vector<size_t>& outcount, F func) {
+#else
+void reduce_by_key(const K* keyp, const V* valp, size_t size, 
+                   std::vector<K>& outkey, std::vector<V>& outval,
+                   F func) {
+#endif
+  if(size == 0) {
+    outkey.resize(0); outval.resize(0);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    outcount.resize(0);
+#endif
+    return;
+  }
+  std::vector<K> outkeytmp(size);
+  std::vector<V> outvaltmp(size);
+  K* outkeytmpp = outkeytmp.data();
+  V* outvaltmpp = outvaltmp.data();
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+  std::vector<size_t> outcounttmp(size);
+  size_t* outcounttmpp = outcounttmp.data();
+#endif
+  size_t each = size / REDUCE_BY_KEY_VLEN; // maybe 0
+  if(each % 2 == 0 && each > 1) each--;
+  size_t rest = size - each * REDUCE_BY_KEY_VLEN;
+  size_t out_ridx[REDUCE_BY_KEY_VLEN];
+  for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+    out_ridx[i] = each * i;
+  }
+  if(each == 0) {
+    // rest is not zero, sicne size is not zero
+    auto current_key_rest = keyp[0];
+    auto current_val_rest = valp[0];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    size_t current_count_rest = 1;
+#endif
+    size_t rest_idx = 0;
+    // no vector loop
+    for(size_t j = 1; j < rest; j++) {
+      auto loaded_key_rest = keyp[j]; 
+      auto loaded_val_rest = valp[j]; 
+      if(loaded_key_rest != current_key_rest) {
+        outkeytmpp[rest_idx] = current_key_rest;
+        outvaltmpp[rest_idx] = current_val_rest;
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+        outcounttmpp[rest_idx] = current_count_rest;
+        current_count_rest = 1;
+#endif
+        rest_idx++;
+        current_key_rest = loaded_key_rest;
+        current_val_rest = loaded_val_rest;
+      } else {
+        current_val_rest = func(current_val_rest, loaded_val_rest);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+        current_count_rest++;
+#endif
+      }
+    }
+    outkeytmpp[rest_idx] = current_key_rest;
+    outvaltmpp[rest_idx] = current_val_rest;
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    outcounttmpp[rest_idx] = current_count_rest;
+#endif
+    rest_idx++;
+    size_t total = rest_idx;
+    outkey.resize(total);
+    outval.resize(total);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    outcount.resize(total);
+#endif
+    K* outkeyp = outkey.data();
+    V* outvalp = outval.data();
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    size_t* outcountp = outcount.data();
+#endif
+    for(size_t j = 0; j < rest_idx; j++) {
+      outkeyp[j] = outkeytmpp[j];
+      outvalp[j] = outvaltmpp[j];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      outcountp[j] = outcounttmpp[j];
+#endif
+    }
+  } else {
+    K current_key[REDUCE_BY_KEY_VLEN];
+    V current_val[REDUCE_BY_KEY_VLEN];
+    K current_key_vreg[REDUCE_BY_KEY_VLEN];
+    V current_val_vreg[REDUCE_BY_KEY_VLEN];
+#pragma _NEC vreg(current_key_vreg)
+#pragma _NEC vreg(current_val_vreg)
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    size_t current_count[REDUCE_BY_KEY_VLEN];
+    size_t current_count_vreg[REDUCE_BY_KEY_VLEN];
+#pragma _NEC vreg(current_count_vreg)
+#endif
+    // load 1st element
+    for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+      current_key[i] = keyp[each * i];
+      current_val[i] = valp[each * i];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      current_count[i] = 1;
+#endif
+    }
+    size_t out_ridx_vreg[REDUCE_BY_KEY_VLEN];
+#pragma _NEC vreg(out_ridx_vreg)
+    for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+      out_ridx_vreg[i] = out_ridx[i];
+      current_key_vreg[i] = current_key[i];
+      current_val_vreg[i] = current_val[i];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      current_count_vreg[i] = current_count[i];
+#endif
+    }
+
+    for(size_t j = 1; j < each; j++) {
+#pragma cdir nodep
+#pragma _NEC ivdep
+#pragma _NEC vovertake
+      for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+        auto loaded_key = keyp[j + each * i];
+        auto loaded_val = valp[j + each * i];
+        if(loaded_key != current_key_vreg[i]) {
+          outkeytmpp[out_ridx_vreg[i]] = current_key_vreg[i];
+          outvaltmpp[out_ridx_vreg[i]] = current_val_vreg[i];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+          outcounttmpp[out_ridx_vreg[i]] = current_count_vreg[i];
+          current_count_vreg[i] = 1;
+#endif
+          out_ridx_vreg[i]++;
+          current_key_vreg[i] = loaded_key;
+          current_val_vreg[i] = loaded_val;
+        } else {
+          current_val_vreg[i] = func(current_val_vreg[i], loaded_val);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+          current_count_vreg[i]++;
+#endif
+        }
+      }
+    }
+    for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+      out_ridx[i] = out_ridx_vreg[i];
+      current_key[i] = current_key_vreg[i];
+      current_val[i] = current_val_vreg[i];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      current_count[i] = current_count_vreg[i];
+#endif
+    }
+
+    size_t rest_idx = each * REDUCE_BY_KEY_VLEN;
+    K current_key_rest;
+    V current_val_rest;
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    size_t current_count_rest;
+#endif
+    if(rest != 0) {
+      size_t rest_idx_start = rest_idx;
+      current_key_rest = keyp[rest_idx_start];
+      current_val_rest = valp[rest_idx_start];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      current_count_rest = 1;
+#endif
+      // no vector loop
+      for(size_t j = 1; j < rest; j++) {
+        auto loaded_key_rest = keyp[j + rest_idx_start]; 
+        auto loaded_val_rest = valp[j + rest_idx_start]; 
+        if(loaded_key_rest != current_key_rest) {
+          outkeytmpp[rest_idx] = current_key_rest;
+          outvaltmpp[rest_idx] = current_val_rest;
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+          outcounttmpp[rest_idx] = current_count_rest;
+          current_count_rest = 1;
+#endif
+          rest_idx++;
+          current_key_rest = loaded_key_rest;
+          current_val_rest = loaded_val_rest;
+        } else {
+          current_val_rest = func(current_val_rest, loaded_val_rest);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+          current_count_rest++;
+#endif
+        }
+      }
+    }
+    // no vector loop
+    for(size_t i = 0; i < REDUCE_BY_KEY_VLEN-1; i++) {
+      if(current_key[i] == keyp[each * (i+1)]) {
+        if(current_key[i] == current_key[i+1]) { // still working...
+          current_val[i+1] = func(current_val[i+1], current_val[i]);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+          current_count[i+1] += current_count[i];
+#endif
+        } else {
+          outvaltmpp[each * (i+1)] =
+            func(outvaltmpp[each * (i+1)], current_val[i]);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+          outcounttmpp[each * (i+1)] += current_count[i];
+#endif
+        }
+      } else {
+        outkeytmpp[out_ridx[i]] = current_key[i];
+        outvaltmpp[out_ridx[i]] = current_val[i];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+        outcounttmpp[out_ridx[i]] = current_count[i];
+#endif
+        out_ridx[i]++;        
+      }
+    }
+    size_t tail = REDUCE_BY_KEY_VLEN-1;
+    if(rest != 0 && current_key[tail] == keyp[each * (tail+1)]) {
+      if(current_key[tail] == current_key_rest) { // still working...
+        current_val_rest = func(current_val_rest, current_val[tail]);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+        current_count_rest += current_count[tail];
+#endif
+      } else {
+        outvaltmpp[each * (tail+1)] =
+          func(outvaltmpp[each * (tail+1)], current_val[tail]);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+        outcounttmpp[each * (tail+1)] += current_count[tail];
+#endif
+      }
+    } else {
+      outkeytmpp[out_ridx[tail]] = current_key[tail];
+      outvaltmpp[out_ridx[tail]] = current_val[tail];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      outcounttmpp[out_ridx[tail]] = current_count[tail];
+#endif
+      out_ridx[tail]++;        
+    }
+    if(rest != 0) {
+      outkeytmpp[rest_idx] = current_key_rest;
+      outvaltmpp[rest_idx] = current_val_rest;
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      outcounttmpp[rest_idx] = current_count_rest;
+#endif
+      rest_idx++;
+    }
+
+    size_t sizes[REDUCE_BY_KEY_VLEN];
+    for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+      sizes[i] = out_ridx[i] - each * i;
+    }
+    size_t total = 0;
+    for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+      total += sizes[i];
+    }
+    size_t rest_size = rest_idx - each * REDUCE_BY_KEY_VLEN;
+    total += rest_size;
+    outkey.resize(total);
+    outval.resize(total);
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    outcount.resize(total);
+#endif
+    K* outkeyp = outkey.data();
+    V* outvalp = outval.data();
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+    size_t* outcountp = outcount.data();
+#endif
+    size_t current = 0;
+    for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
+      for(size_t j = 0; j < sizes[i]; j++) {
+        outkeyp[current + j] = outkeytmpp[each * i + j];
+        outvalp[current + j] = outvaltmpp[each * i + j];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+        outcountp[current + j] = outcounttmpp[each * i + j];
+#endif
+      }
+      current += sizes[i];
+    }
+    // rest (and rest_idx) maybe 0
+    for(size_t j = 0; j < rest_size; j++) {
+      outkeyp[current + j] = outkeytmpp[each * REDUCE_BY_KEY_VLEN + j];
+      outvalp[current + j] = outvaltmpp[each * REDUCE_BY_KEY_VLEN + j];
+#ifdef REDUCE_BY_KEY_WITH_COUNT
+      outcountp[current + j] = outcounttmpp[each * REDUCE_BY_KEY_VLEN + j];
+#endif
+    }
+  }
+}
+
