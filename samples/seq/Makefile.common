@@ -1,5 +1,5 @@
-TARGETS := radix_sort radix_sort_desc prefix_sum set_intersection set_union set_difference set_merge set_merge_desc set_merge_pair set_merge_pair_desc set_separate set_unique lower_bound upper_bound hashtable join
-TO_INSTALL := sample_util.hpp radix_sort.cc radix_sort_desc.cc prefix_sum.cc set_intersection.cc set_union.cc set_difference.cc set_merge.cc set_merge_desc.cc set_merge_pair.cc set_merge_pair_desc.cc set_separate.cc set_unique.cc lower_bound.cc upper_bound.cc hashtable.cc join.cc
+TARGETS := radix_sort radix_sort_desc prefix_sum set_intersection set_union set_difference set_merge set_merge_desc set_merge_pair set_merge_pair_desc set_separate set_unique lower_bound upper_bound hashtable join reduce_by_key
+TO_INSTALL := sample_util.hpp radix_sort.cc radix_sort_desc.cc prefix_sum.cc set_intersection.cc set_union.cc set_difference.cc set_merge.cc set_merge_desc.cc set_merge_pair.cc set_merge_pair_desc.cc set_separate.cc set_unique.cc lower_bound.cc upper_bound.cc hashtable.cc join.cc reduce_by_key.cc
 
 LIBS := -L../../src/vstl/seq/core -lvstl_core_seq -L../../src/vstl/common/ -lvstl_common
 INCLUDES := -I../../src/
@@ -57,6 +57,9 @@ hashtable: hashtable.o
 
 join: join.o
 	${LINK} -o join join.o ${LIBS}
+
+reduce_by_key: reduce_by_key.o
+	${LINK} -o reduce_by_key reduce_by_key.o ${LIBS}
 
 clean:
 	${RM} ${TO_CLEAN} ${TARGETS}
