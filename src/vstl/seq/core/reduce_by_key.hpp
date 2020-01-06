@@ -2,8 +2,9 @@
 #define REDUCE_BY_KEY_HPP
 
 #include <vector>
-#include <functional>
 #include <cstddef>
+
+#include "../../common/functional.hpp"
 
 #if defined(_SX) || defined(__ve__)
 #define REDUCE_BY_KEY_VLEN 256
@@ -13,22 +14,6 @@
 
 namespace vstl {
 namespace seq {
-
-template <class T>
-struct plus {
-  T operator()(T a, T b){return a + b;}
-};
-
-template <class T>
-struct max {
-  T operator()(T a, T b){return a < b ? b : a;}
-};
-
-template <class T>
-struct min {
-  T operator()(T a, T b){return a < b ? a : b;}
-};
-
 
 #define REDUCE_BY_KEY_WITH_COUNT
 #include "reduce_by_key.incl"
@@ -54,7 +39,7 @@ template <class K, class V>
 void reduce_by_key(const std::vector<K>& key, const std::vector<V>& val,
                    std::vector<K>& outkey, std::vector<V>& outval) { 
   reduce_by_key(key.data(), val.data(), key.size(), outkey, outval, 
-                plus<V>());
+                vstl::plus<V>());
 }
 
 template <class K, class V>
@@ -62,7 +47,7 @@ void reduce_by_key_count(const std::vector<K>& key, const std::vector<V>& val,
                          std::vector<K>& outkey, std::vector<V>& outval, 
                          std::vector<size_t>& outcount) {
   reduce_by_key_count(key.data(), val.data(), key.size(), outkey, outval,
-                      outcount, plus<V>());
+                      outcount, vstl::plus<V>());
 }
 
 }
