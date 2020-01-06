@@ -117,7 +117,10 @@ void reduce_by_key(const K* keyp, const V* valp, size_t size,
     for(size_t j = 1; j < each; j++) {
 #pragma cdir nodep
 #pragma _NEC ivdep
+#ifndef REDUCE_BY_KEY_WITH_COUNT
+// current_key/val_vreg cannot be vreg'ed (2.5.1)
 #pragma _NEC vovertake
+#endif
       for(size_t i = 0; i < REDUCE_BY_KEY_VLEN; i++) {
         auto loaded_key = keyp[j + each * i];
         auto loaded_val = valp[j + each * i];
