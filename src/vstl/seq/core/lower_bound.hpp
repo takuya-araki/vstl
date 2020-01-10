@@ -5,7 +5,7 @@
 #include <cstddef>
 
 #if defined(_SX) || defined(__ve__)
-#define LOWER_BOUND_VLEN 256
+#define LOWER_BOUND_VLEN 2048 // not vlen, but better than 256
 #else
 #define LOWER_BOUND_VLEN 4
 #endif
@@ -19,11 +19,11 @@ void lower_bound(const T* sorted, size_t sorted_size,
                  const T* to_find, size_t to_find_size,
                  size_t* ret) {
   size_t low[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(low)
+//#pragma _NEC vreg(low)
   size_t high[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(high)
+//#pragma _NEC vreg(high)
   T values[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(values)
+//#pragma _NEC vreg(values)
 
   size_t block_size = to_find_size / LOWER_BOUND_VLEN;
   size_t rest = to_find_size % LOWER_BOUND_VLEN;
@@ -62,11 +62,11 @@ void lower_bound(const T* sorted, size_t sorted_size,
 
   // vreg of different length loop is not supported? (2.4.1)
   size_t low2[LOWER_BOUND_VLEN]; 
-#pragma _NEC vreg(low2)
+//#pragma _NEC vreg(low2)
   size_t high2[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(high2)
+//#pragma _NEC vreg(high2)
   T values2[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(values2)
+//#pragma _NEC vreg(values2)
 
   size_t offset = block_size * LOWER_BOUND_VLEN;
   auto crnt_to_find = to_find + offset;
@@ -114,11 +114,11 @@ void lower_bound_desc(const T* sorted, size_t sorted_size,
                       const T* to_find, size_t to_find_size,
                       size_t* ret) {
   size_t low[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(low)
+//#pragma _NEC vreg(low)
   size_t high[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(high)
+//#pragma _NEC vreg(high)
   T values[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(values)
+//#pragma _NEC vreg(values)
 
   size_t block_size = to_find_size / LOWER_BOUND_VLEN;
   size_t rest = to_find_size % LOWER_BOUND_VLEN;
@@ -157,11 +157,11 @@ void lower_bound_desc(const T* sorted, size_t sorted_size,
 
   // vreg of different length loop is not supported? (2.4.1)
   size_t low2[LOWER_BOUND_VLEN]; 
-#pragma _NEC vreg(low2)
+//#pragma _NEC vreg(low2)
   size_t high2[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(high2)
+//#pragma _NEC vreg(high2)
   T values2[LOWER_BOUND_VLEN];
-#pragma _NEC vreg(values2)
+//#pragma _NEC vreg(values2)
 
   size_t offset = block_size * LOWER_BOUND_VLEN;
   auto crnt_to_find = to_find + offset;
