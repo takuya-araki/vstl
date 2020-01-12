@@ -58,7 +58,7 @@ pointer interface and shift the output pointer and size.
 
     template <class K, class V>
     void radix_sort(std::vector<K>& key_array, std::vector<V>& val_array,
-    	            bool positive_only = false)
+                    bool positive_only = false)
     
     template <class K, class V>
     void radix_sort(K* key_array, V* val_array, size_t size,
@@ -335,7 +335,7 @@ If you want the number of the keys, you can use reduce_by_key_count.
 You can do the same thing by calling set_separate. Please check which
 is faster.
 
-## hash_table
+## unique_hashtable
 
     #include <vstl/seq/core/hashtable.hpp>
 
@@ -345,8 +345,9 @@ is faster.
     unique_hashtable::unique_hashtable(const std::vector<K>& k, 
                                        const std::vector<V>& v)
     
-    std::vector<V> lookup(const std::vector<K>& k);
-    std::vector<V> lookup(const std::vector<K>& k, std::vector<size_t>& miss);
+    std::vector<V> unique_hashtable::lookup(const std::vector<K>& k);
+    std::vector<V> unique_hashtable::lookup(const std::vector<K>& k, 
+                                            std::vector<size_t>& miss);
 
 It provides hash table of unique keys. The constructor takes
 std::vector of key and value. Here, key should not contain duplicated
