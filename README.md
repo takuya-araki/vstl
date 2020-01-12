@@ -37,6 +37,8 @@ compilation options -I and -L. You need to link libvstl_common and
 libvstl_core_seq (omp version is under development).
 
 To use each algorithm, you need to include corresponding header file.
+The namespace is vstl::seq or vstl. (OpenMP version will be
+vstl::omp, which is under development).
 
 ## prefix_sum
 
