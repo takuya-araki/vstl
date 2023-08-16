@@ -21,4 +21,26 @@ int main(int argc, char* argv[]){
   auto t2 = vstl::get_dtime();
   auto size = key.size();
   cout << "time of " << size << " data: " << t2-t1 << " sec" << endl;;
+
+  cout << endl;
+
+  int mat[5][5] = {0,2,1,0,3,
+                   1,0,1,2,1,
+                   0,1,0,0,1,
+                   2,2,1,1,0,
+                   3,2,1,3,2};
+  cout << "column-wise prefix sum (scan)" << endl << "src:" << endl;
+  for(auto i=0; i<5; i++) {
+    for(auto j=0; j<5; j++) cout << mat[i][j] << " ";
+    cout << endl;
+  }
+  int out[5][5] = {0};
+  for(auto j=0; j<5; j++) {
+    vstl::seq::prefix_sum((const int*)&mat[0][j], 5, &out[0][j], 5, 5);
+  }
+  cout << "out:" << endl;
+  for(auto i=0; i<5; i++) {
+    for(auto j=0; j<5; j++) cout << out[i][j] << " ";
+    cout << endl;
+  }
 }
